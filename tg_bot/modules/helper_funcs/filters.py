@@ -1,34 +1,207 @@
-from telegram import Message
-from telegram.ext import BaseFilter
+package Filters
 
-from tg_bot import SUPPORT_USERS, SUDO_USERS
+import (
+	"strings"
 
+	"github.com/PaulSonOfLars/gotgbot/dice"
+	"github.com/PaulSonOfLars/gotgbot/ext"
+)
 
-class CustomFilters(object):
-    class _Supporters(BaseFilter):
-        def filter(self, message: Message):
-            return bool(message.from_user and message.from_user.id in SUPPORT_USERS)
+func All(message *ext.Message) bool {
+	return true
+}
 
-    support_filter = _Supporters()
+func Text(message *ext.Message) bool {
+	return message.Text != ""
+}
 
-    class _Sudoers(BaseFilter):
-        def filter(self, message: Message):
-            return bool(message.from_user and message.from_user.id in SUDO_USERS)
+func Caption(message *ext.Message) bool {
+	return message.Caption != ""
+}
 
-    sudo_filter = _Sudoers()
+func Command(message *ext.Message) bool {
+	return len(message.Entities) > 0 && message.Entities[0].Type == "bot_command" && message.Entities[0].Offset == 0
+}
 
-    class _MimeType(BaseFilter):
-        def __init__(self, mimetype):
-            self.mime_type = mimetype
-            self.name = "CustomFilters.mime_type({})".format(self.mime_type)
+func Reply(message *ext.Message) bool {
+	return message.ReplyToMessage != nil
+}
 
-        def filter(self, message: Message):
-            return bool(message.document and message.document.mime_type == self.mime_type)
+func Audio(message *ext.Message) bool {
+	return message.Audio != nil
+}
 
-    mime_type = _MimeType
+func Document(message *ext.Message) bool {
+	return message.Document != nil
+}
 
-    class _HasText(BaseFilter):
-        def filter(self, message: Message):
-            return bool(message.text or message.sticker or message.photo or message.document or message.video)
+func Photo(message *ext.Message) bool {
+	return message.Photo != nil
+}
 
-    has_text = _HasText()
+func Animation(message *ext.Message) bool {
+	return message.Animation != nil
+}
+
+func Sticker(message *ext.Message) bool {
+	return message.Sticker != nil
+}
+
+func Video(message *ext.Message) bool {
+	return message.Video != nil
+}
+
+func VideoNote(message *ext.Message) bool {
+	return message.VideoNote != nil
+}
+
+func Voice(message *ext.Message) bool {
+	return message.Voice != nil
+}
+
+func Contact(message *ext.Message) bool {
+	return message.Contact != nil
+}
+
+func Location(message *ext.Message) bool {
+	return message.Location != nil
+}
+
+func Venue(message *ext.Message) bool {
+	return message.Venue != nil
+}
+
+func Forwarded(message *ext.Message) bool {
+	return message.ForwardDate != 0
+}
+
+func Game(message *ext.Message) bool {
+	return message.Game != nil
+}
+
+func Private(message *ext.Message) bool {
+	return message.Chat.Type == "private"
+}
+
+func Group(message *ext.Message) bool {
+	return message.Chat.Type == "group" || message.Chat.Type == "supergroup"
+}
+
+func SuperGroup(message *ext.Message) bool {
+	return message.Chat.Type == "group"
+}
+
+func Pin(message *ext.Message) bool {
+	return message.PinnedMessage != nil
+}
+
+func Dice(message *ext.Message) bool {
+	// default is dice, so consider emptystring to be dice
+	return message.Dice != nil && (message.Dice.Emoji == "" || message.Dice.Emoji == dice.Dice)
+}
+
+func Dart(message *ext.Message) bool {
+	return message.Dice != nil && message.Dice.Emoji == dice.Dart
+}
+
+func Basketball(message *ext.Message) bool {
+	return message.Dice != nil && message.Dice.Emoji == dice.Basketball
+}
+
+func DiceValue(message *ext.Message, val int) bool {
+	return message.Dice != nil && message.Dice.Value == val
+}
+
+func ViaBot(message *ext.Message) bool {
+	return message.ViaBot != nil
+}
+
+func Username(name string) func(message *ext.Message) bool {
+	return func(m *ext.Message) bool {
+		return m.From.Username == name
+	}
+}
+
+func Entity(entType string) func(message *ext.Message) bool {
+	return func(m *ext.Message) bool {
+		for _, ent := range m.Entities {
+			if ent.Type == entType {
+				return true
+			}
+		}
+		return false
+	}
+}
+
+func CaptionEntity(entType string) func(message *ext.Message) bool {
+	return func(m *ext.Message) bool {
+		for _, ent := range m.CaptionEntities {
+			if ent.Type == entType {
+				return true
+			}
+		}
+		return false
+	}
+}
+
+func UserID(id int) func(message *ext.Message) bool {
+	return func(m *ext.Message) bool {
+		return m.From.Id == id
+	}
+}
+
+func Chatusername(name string) func(message *ext.Message) bool {
+	return func(m *ext.Message) bool {
+		return m.Chat != nil && m.Chat.Username != "" && m.Chat.Username == name
+	}
+}
+
+func ChatID(id int) func(message *ext.Message) bool {
+	return func(m *ext.Message) bool {
+		return m.Chat != nil && m.Chat.Id == id
+	}
+}
+
+func NewChatMembers() func(message *ext.Message) bool {
+	return func(m *ext.Message) bool {
+		return m.NewChatMembers != nil
+	}
+}
+
+func LeftChatMembers() func(message *ext.Message) bool {
+	return func(m *ext.Message) bool {
+		return m.LeftChatMember != nil
+	}
+}
+
+func Migrate() func(message *ext.Message) bool {
+	return func(m *ext.Message) bool {
+		return m.MigrateFromChatId != 0 || m.MigrateToChatId != 0
+	}
+}
+
+func MigrateFrom() func(message *ext.Message) bool {
+	return func(m *ext.Message) bool {
+		return m.MigrateFromChatId != 0
+	}
+}
+
+func MigrateTo() func(message *ext.Message) bool {
+	return func(m *ext.Message) bool {
+		return m.MigrateToChatId != 0
+	}
+}
+
+func StartsWith(prefix string) func(message *ext.Message) bool {
+	return func(m *ext.Message) bool {
+		return (m.Text != "" && strings.HasPrefix(m.Text, prefix)) || (m.Caption != "" && strings.HasPrefix(m.Caption, prefix))
+	}
+}
+
+func Poll(message *ext.Message) bool {
+	return message.Poll != nil
+}
+
+func Buttons(message *ext.Message) bool {
+	return message.ReplyMarkup != nil
+}
